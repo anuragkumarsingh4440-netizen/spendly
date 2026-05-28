@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python -m venv venv)",
+      "PowerShell(.\\\\venv\\\\Scripts\\\\Activate.ps1)",
+      "Bash(git add *)"
+    ]
+  }
+}
