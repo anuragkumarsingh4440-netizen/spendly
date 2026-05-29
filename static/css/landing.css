@@ -1,0 +1,226 @@
+/* ------------------------------------------------------------------ */
+/* Landing hero (overrides style.css .hero rules — load order matters) */
+/* ------------------------------------------------------------------ */
+
+.hero {
+    display: block;
+    text-align: center;
+    padding: 4.5rem 2rem 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    gap: 0;
+}
+
+.hero-inner {
+    max-width: 880px;
+    margin: 0 auto;
+}
+
+/* Badge — soft mint pill with a green dot */
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: #d6f0df;
+    color: #1a472a;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 0.5rem 1.15rem;
+    border-radius: 999px;
+    margin-bottom: 2.5rem;
+}
+
+.hero-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #1a472a;
+    display: inline-block;
+}
+
+/* Title — bold sans-serif, black + green accent line */
+.hero-title {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 6vw, 4.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    color: #0f0f0f;
+    margin-bottom: 1.75rem;
+}
+
+.hero-title-accent {
+    color: #3a8c5a;
+    font-style: normal;
+    font-weight: 700;
+}
+
+/* Subtitle */
+.hero-subtitle {
+    font-size: 1.125rem;
+    color: #6b6b6b;
+    line-height: 1.6;
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+}
+
+/* Buttons — both filled, dark */
+.hero-actions {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3.5rem;
+}
+
+.hero-btn {
+    display: inline-block;
+    background: #0f0f0f;
+    color: #ffffff !important;
+    padding: 1rem 1.75rem;
+    border-radius: 14px;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none;
+}
+
+.hero-btn:hover {
+    background: #2a2a2a;
+    transform: translateY(-1px);
+}
+
+/* Preview window */
+.hero-preview {
+    background: #f6f4ef;
+    border: 1px solid #e8e5dd;
+    border-radius: 22px;
+    padding: 1.25rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+    text-align: left;
+}
+
+.hero-preview-dots {
+    display: flex;
+    gap: 0.45rem;
+    padding: 0.25rem 0.25rem 0.85rem;
+}
+
+.hero-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.hero-dot-red    { background: #f06a5a; }
+.hero-dot-yellow { background: #f1c95c; }
+.hero-dot-green  { background: #6ed29a; }
+
+/* Stat cards row */
+.hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.hero-stat {
+    background: #ffffff;
+    border: 1px solid #ece9e2;
+    border-radius: 16px;
+    padding: 1.1rem 1.35rem;
+}
+
+.hero-stat-label {
+    font-size: 0.9rem;
+    color: #6b6b6b;
+    margin-bottom: 0.45rem;
+    font-weight: 400;
+}
+
+.hero-stat-value {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+    color: #0f0f0f;
+    margin-bottom: 0.5rem;
+}
+
+.hero-stat-delta {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    font-weight: 500;
+}
+
+.hero-stat-delta-down { color: #d9534f; }
+.hero-stat-delta-good { color: #2e9b62; }
+
+/* Bars card */
+.hero-bars {
+    background: #ffffff;
+    border: 1px solid #ece9e2;
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.hero-bar-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.hero-bar-cat {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #2d2d2d;
+}
+
+.hero-bar-track {
+    height: 10px;
+    background: #ece9e2;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.hero-bar {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.hero-bar-food   { background: #e8a23c; }
+.hero-bar-travel { background: #5b8fc7; }
+.hero-bar-bills  { background: #8b7fc9; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}
+
+@media (max-width: 700px) {
+    .hero { padding: 3rem 1.25rem 2.5rem; }
+    .hero-badge { font-size: 0.85rem; }
+    .hero-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.75rem;
+    }
+    .hero-actions .hero-btn { width: 100%; text-align: center; }
+    .hero-stats { grid-template-columns: 1fr; }
+    .hero-preview { padding: 1rem; }
+    .hero-bars { padding: 1.25rem; }
+    .hero-bar-row { grid-template-columns: 64px 1fr; gap: 0.75rem; }
+}
