@@ -202,12 +202,100 @@
 .hero-bar-travel { background: #5b8fc7; }
 .hero-bar-bills  { background: #8b7fc9; }
 
+/* ------------------------------------------------------------------ */
+/* Video modal ("See how it works")                                    */
+/* ------------------------------------------------------------------ */
+
+.video-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1.5rem;
+}
+
+.video-modal.is-open {
+    display: flex;
+    animation: video-modal-fade 0.2s ease;
+}
+
+@keyframes video-modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.video-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 15, 15, 0.78);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    cursor: pointer;
+}
+
+.video-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    z-index: 1;
+}
+
+.video-modal-close {
+    position: absolute;
+    top: -3rem;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+}
+
+.video-modal-close:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.05);
+}
+
+.video-modal-frame {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.video-modal-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .hero {
         grid-template-columns: 1fr;
         text-align: center;
     }
+}
+
+@media (max-width: 700px) {
+    .video-modal { padding: 1rem; }
+    .video-modal-close { top: -2.75rem; }
 }
 
 @media (max-width: 700px) {

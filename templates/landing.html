@@ -24,7 +24,7 @@
         </p>
         <div class="hero-actions">
             <a href="{{ url_for('register') }}" class="hero-btn">Create free account</a>
-            <a href="#features" class="hero-btn">See how it works</a>
+            <a href="#" class="hero-btn" id="watch-demo-btn">See how it works</a>
         </div>
 
         <div class="hero-preview">
@@ -104,4 +104,60 @@
     </div>
 </section>
 
+<div class="video-modal" id="video-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="See how Spendly works">
+    <div class="video-modal-backdrop" data-close></div>
+    <div class="video-modal-content">
+        <button class="video-modal-close" type="button" data-close aria-label="Close video">&times;</button>
+        <div class="video-modal-frame">
+            <iframe id="video-modal-iframe"
+                    data-src="https://www.youtube.com/embed/M7lc1UVf-VE?autoplay=1&rel=0"
+                    src=""
+                    title="See how Spendly works"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var trigger = document.getElementById('watch-demo-btn');
+    var modal = document.getElementById('video-modal');
+    var iframe = document.getElementById('video-modal-iframe');
+    if (!trigger || !modal || !iframe) return;
+
+    var videoSrc = iframe.getAttribute('data-src');
+
+    function openModal(e) {
+        if (e) e.preventDefault();
+        iframe.setAttribute('src', videoSrc);
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        iframe.setAttribute('src', '');
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    trigger.addEventListener('click', openModal);
+
+    var closers = modal.querySelectorAll('[data-close]');
+    for (var i = 0; i < closers.length; i++) {
+        closers[i].addEventListener('click', closeModal);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) {
+            closeModal();
+        }
+    });
+})();
+</script>
 {% endblock %}
