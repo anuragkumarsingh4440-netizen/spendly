@@ -181,11 +181,11 @@ Use exactly these values:
 
 ## 14. Definition of Done
 
-- [ ]  Database file is created on app startup
-- [ ]  Both tables exist with correct schema and constraints
-- [ ]  Demo user exists with hashed password
-- [ ]  8 sample expenses exist across categories
-- [ ]  No duplicate seed data on repeated runs
-- [ ]  App starts without errors
-- [ ]  Foreign key enforcement works
-- [ ]  All queries use parameterized SQL
+- [x]  Database file is created on app startup
+- [x]  Both tables exist with correct schema and constraints
+- [x]  Demo user exists with hashed password
+- [x]  8 sample expenses exist across categories
+- [x]  No duplicate seed data on repeated runs
+- [x]  App starts without errors
+- [x]  Foreign key enforcement works
+- [x]  All queries use parameterized SQL
