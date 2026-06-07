@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Your Profile — Spendly{% endblock %}
+
+{% block content %}
+
+<section class="auth-section">
+    <div class="auth-container">
+
+        <div class="auth-header">
+            <h1 class="auth-title">Your profile</h1>
+            <p class="auth-subtitle">Account details and spending summary</p>
+        </div>
+
+        <div class="auth-card">
+            <div class="form-group">
+                <label>Name</label>
+                <p class="form-input">{{ user.name }}</p>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <p class="form-input">{{ user.email }}</p>
+            </div>
+            <div class="form-group">
+                <label>Member since</label>
+                <p class="form-input">{{ user.created_at }}</p>
+            </div>
+
+            <hr>
+
+            <div class="form-group">
+                <label>Total transactions</label>
+                <p class="form-input">{{ total_count }}</p>
+            </div>
+            <div class="form-group">
+                <label>Total spent</label>
+                <p class="form-input">&#8377;{{ '%.2f'|format(total_amount) }}</p>
+            </div>
+            <div class="form-group">
+                <label>This month</label>
+                <p class="form-input">&#8377;{{ '%.2f'|format(month_amount) }}</p>
+            </div>
+
+            <a href="{{ url_for('logout') }}" class="btn-submit">Logout</a>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}
