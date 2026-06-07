@@ -17,6 +17,14 @@ with app.app_context():
     seed_db()
 
 
+# Expose the logged-in user to every template (navbar, etc.).
+@app.context_processor
+def inject_current_user():
+    if "user_id" in session:
+        return {"current_user": {"id": session["user_id"], "name": session.get("user_name")}}
+    return {"current_user": None}
+
+
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
@@ -101,14 +109,15 @@ def privacy():
     return render_template("privacy.html")
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("landing"))
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/logout")
-def logout():
-    return "Logout — coming in Step 3"
-
 
 @app.route("/profile")
 def profile():
