@@ -1,6 +1,14 @@
 from flask import Flask, render_template
 
+from database.db import init_db, seed_db
+
 app = Flask(__name__)
+
+# Ensure the database schema exists and demo data is seeded on startup.
+# Runs under both `python app.py` and `flask run`.
+with app.app_context():
+    init_db()
+    seed_db()
 
 
 # ------------------------------------------------------------------ #
