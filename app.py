@@ -1,6 +1,7 @@
+import math
 import os
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -11,6 +12,10 @@ from database.db import get_db, init_db, seed_db
 app = Flask(__name__)
 # Signed-cookie sessions. Use SECRET_KEY in production; dev fallback otherwise.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+# Fixed expense categories (must match the seed data from Step 1).
+CATEGORIES = ["Food", "Transport", "Bills", "Health",
+              "Entertainment", "Shopping", "Other"]
 
 # Ensure the database schema exists and demo data is seeded on startup.
 # Runs under both `python app.py` and `flask run`.
@@ -156,14 +161,85 @@ def profile():
     )
 
 
+@app.route("/analytics")
+@login_required
+def analytics():
+    # Login-protected; logged-out users are redirected to login by login_required.
+    return render_template("analytics.html")
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
+@login_required
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if request.method == "POST":
+        amount = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date_str = request.form.get("date", "").strip()
+        description = request.form.get("description", "").strip()
+
+        # Preserve submitted values when re-rendering on error.
+        submitted = {
+            "amount": amount,
+            "category": category,
+            "date": date_str,
+            "description": description,
+        }
+
+        def reject(message):
+            return render_template(
+                "add_expense.html",
+                error=message,
+                categories=CATEGORIES,
+                today=date.today().isoformat(),
+                expense=submitted,
+            )
+
+        # Validate amount: required, numeric, finite, greater than zero.
+        # float() also accepts "nan"/"inf"/overflow literals, which slip past
+        # a bare "<= 0" check — guard with isfinite.
+        try:
+            amount_value = float(amount)
+        except ValueError:
+            return reject("Please enter a valid amount.")
+        if not math.isfinite(amount_value) or amount_value <= 0:
+            return reject("Amount must be greater than zero.")
+
+        # Validate category against the server-side list (don't trust the form).
+        if category not in CATEGORIES:
+            return reject("Please choose a valid category.")
+
+        # Validate date format and normalize to zero-padded YYYY-MM-DD so it
+        # matches the LIKE 'YYYY-MM-%' month query (strptime accepts "2026-6-8").
+        try:
+            date_str = datetime.strptime(date_str, "%Y-%m-%d").date().isoformat()
+        except ValueError:
+            return reject("Please enter a valid date.")
+
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO expenses (user_id, amount, category, date, description) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (session["user_id"], amount_value, category, date_str,
+                 description or None),
+            )
+            db.commit()
+        finally:
+            db.close()
+
+        return redirect(url_for("profile"))
+
+    return render_template(
+        "add_expense.html",
+        categories=CATEGORIES,
+        today=date.today().isoformat(),
+        expense=None,
+    )
 
 
 @app.route("/expenses/<int:id>/edit")
