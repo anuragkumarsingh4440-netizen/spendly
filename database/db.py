@@ -15,7 +15,7 @@ from werkzeug.security import generate_password_hash
 # project root = parent of this file's directory (database/ -> root)
 DB_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "expense_tracker.db",
+    "spendly.db",
 )
 
 # Fixed category list (spec §10)
