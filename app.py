@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from datetime import date
+from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -23,6 +25,16 @@ def inject_current_user():
     if "user_id" in session:
         return {"current_user": {"id": session["user_id"], "name": session.get("user_name")}}
     return {"current_user": None}
+
+
+def login_required(view):
+    """Redirect to the login page if there is no active session."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
 
 
 # ------------------------------------------------------------------ #
@@ -115,13 +127,38 @@ def logout():
     return redirect(url_for("landing"))
 
 
+@app.route("/profile")
+@login_required
+def profile():
+    uid = session["user_id"]
+    db = get_db()
+    try:
+        user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+        total_count = db.execute(
+            "SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)
+        ).fetchone()[0]
+        total_amount = db.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)
+        ).fetchone()[0]
+        month = date.today().strftime("%Y-%m")
+        month_amount = db.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ? AND date LIKE ?",
+            (uid, month + "-%"),
+        ).fetchone()[0]
+    finally:
+        db.close()
+    return render_template(
+        "profile.html",
+        user=user,
+        total_count=total_count,
+        total_amount=total_amount,
+        month_amount=month_amount,
+    )
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
 
 
 @app.route("/expenses/add")
