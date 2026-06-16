@@ -4,47 +4,93 @@
 
 {% block content %}
 
-<section class="auth-section">
-    <div class="auth-container">
+{# Initials: first letters of the first two words of the name; fall back to the email. #}
+{% set name_parts = (user.name or '').split() %}
+{% if name_parts %}
+    {% set initials = (name_parts[0][0] ~ (name_parts[1][0] if name_parts|length > 1 else ''))|upper %}
+{% else %}
+    {% set initials = (user.email[0] if user.email else '?')|upper %}
+{% endif %}
 
-        <div class="auth-header">
-            <h1 class="auth-title">Your profile</h1>
-            <p class="auth-subtitle">Account details and spending summary</p>
+<section class="profile-page">
+
+    <header class="profile-header">
+        <div class="profile-avatar" aria-hidden="true">{{ initials }}</div>
+        <h1 class="profile-name">{{ user.name }}</h1>
+        <p class="profile-email">{{ user.email }}</p>
+        <p class="profile-since">Member since {{ user.created_at }}</p>
+    </header>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="wallet"></i></div>
+            <div class="stat-label">Total spent</div>
+            <div class="stat-value">&#8377;{{ '%.2f'|format(total_amount) }}</div>
         </div>
-
-        <div class="auth-card">
-            <div class="form-group">
-                <label>Name</label>
-                <p class="form-input">{{ user.name }}</p>
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <p class="form-input">{{ user.email }}</p>
-            </div>
-            <div class="form-group">
-                <label>Member since</label>
-                <p class="form-input">{{ user.created_at }}</p>
-            </div>
-
-            <hr>
-
-            <div class="form-group">
-                <label>Total transactions</label>
-                <p class="form-input">{{ total_count }}</p>
-            </div>
-            <div class="form-group">
-                <label>Total spent</label>
-                <p class="form-input">&#8377;{{ '%.2f'|format(total_amount) }}</p>
-            </div>
-            <div class="form-group">
-                <label>This month</label>
-                <p class="form-input">&#8377;{{ '%.2f'|format(month_amount) }}</p>
-            </div>
-
-            <a href="{{ url_for('logout') }}" class="btn-submit">Logout</a>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="hash"></i></div>
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value">{{ total_count }}</div>
         </div>
-
+        <div class="stat-card">
+            <div class="stat-icon"><i data-lucide="tag"></i></div>
+            <div class="stat-label">Top category</div>
+            <div class="stat-value">{{ top_category }}</div>
+        </div>
     </div>
+
+    <section class="profile-card profile-transactions">
+        <h2 class="profile-section-title"><i data-lucide="receipt"></i>Recent transactions</h2>
+        {% if recent %}
+        <table class="txn-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th class="txn-amount">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in recent %}
+                <tr>
+                    <td class="txn-date">{{ txn.date }}</td>
+                    <td class="txn-desc">{{ txn.description or '—' }}</td>
+                    <td><span class="category-badge cat-{{ txn.category|lower }}">{{ txn.category }}</span></td>
+                    <td class="txn-amount">&#8377;{{ '%.2f'|format(txn.amount) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="profile-empty">No expenses yet. <a href="{{ url_for('add_expense') }}">Add your first one</a>.</p>
+        {% endif %}
+    </section>
+
+    <section class="profile-card profile-breakdown">
+        <h2 class="profile-section-title"><i data-lucide="pie-chart"></i>Spending by category</h2>
+        {% if breakdown %}
+        <div class="breakdown-list">
+            {% for item in breakdown %}
+            <div class="breakdown-row">
+                <span class="breakdown-cat">{{ item.category }}</span>
+                <div class="breakdown-track">
+                    <div class="breakdown-bar cat-{{ item.category|lower }}" style="width: {{ item.pct }}%"></div>
+                </div>
+                <span class="breakdown-amt">&#8377;{{ '%.2f'|format(item.total) }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="profile-empty">Nothing to break down yet.</p>
+        {% endif %}
+    </section>
+
+    <div class="profile-actions">
+        <a href="{{ url_for('add_expense') }}" class="btn-primary"><i data-lucide="plus"></i>Add expense</a>
+        <a href="{{ url_for('logout') }}" class="btn-ghost"><i data-lucide="log-out"></i>Logout</a>
+    </div>
+
 </section>
 
 {% endblock %}

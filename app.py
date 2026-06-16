@@ -53,6 +53,10 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # Already-authenticated users shouldn't see the register form.
+    if "user_id" in session:
+        return redirect(url_for("profile"))
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
@@ -90,6 +94,10 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Already-authenticated users shouldn't see the login form.
+    if "user_id" in session:
+        return redirect(url_for("profile"))
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
@@ -111,7 +119,7 @@ def login():
 
         session["user_id"] = user["id"]
         session["user_name"] = user["name"]
-        return redirect(url_for("landing"))
+        return redirect(url_for("profile"))
 
     return render_template("login.html")
 
@@ -135,29 +143,46 @@ def logout():
 @app.route("/profile")
 @login_required
 def profile():
-    uid = session["user_id"]
-    db = get_db()
-    try:
-        user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
-        total_count = db.execute(
-            "SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)
-        ).fetchone()[0]
-        total_amount = db.execute(
-            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)
-        ).fetchone()[0]
-        month = date.today().strftime("%Y-%m")
-        month_amount = db.execute(
-            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ? AND date LIKE ?",
-            (uid, month + "-%"),
-        ).fetchone()[0]
-    finally:
-        db.close()
+    # Step 4 is UI-first: the page is driven entirely by hardcoded data so the
+    # layout can be validated in isolation. Real DB queries are wired in Step 5.
+    user = {
+        "name": "Demo User",
+        "email": "demo@spendly.app",
+        "created_at": "Jan 2026",
+    }
+
+    # Most recent expenses for the transaction-history table (hardcoded).
+    recent = [
+        {"date": "2026-06-14", "description": "Groceries — weekly run", "category": "Food", "amount": 1842.50},
+        {"date": "2026-06-13", "description": "Metro card top-up", "category": "Transport", "amount": 500.00},
+        {"date": "2026-06-12", "description": "Electricity bill", "category": "Bills", "amount": 1320.00},
+        {"date": "2026-06-11", "description": "Movie night", "category": "Entertainment", "amount": 760.00},
+        {"date": "2026-06-10", "description": "Pharmacy", "category": "Health", "amount": 415.00},
+        {"date": "2026-06-09", "description": "New headphones", "category": "Shopping", "amount": 2999.00},
+    ]
+
+    # Per-category totals for the breakdown bars (largest first); pct is the
+    # bar width relative to the largest category, precomputed for the template.
+    breakdown = [
+        {"category": "Shopping", "total": 6480.00, "pct": 100},
+        {"category": "Food", "total": 5210.50, "pct": 80},
+        {"category": "Bills", "total": 3120.00, "pct": 48},
+        {"category": "Transport", "total": 1500.00, "pct": 23},
+        {"category": "Health", "total": 915.00, "pct": 14},
+    ]
+
+    total_amount = sum(item["total"] for item in breakdown)
+    total_count = 27
+    top_category = breakdown[0]["category"] if breakdown else "—"
+
     return render_template(
         "profile.html",
         user=user,
         total_count=total_count,
         total_amount=total_amount,
-        month_amount=month_amount,
+        recent=recent,
+        breakdown=breakdown,
+        top_category=top_category,
     )
 
 
