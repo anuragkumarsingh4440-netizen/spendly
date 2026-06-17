@@ -165,22 +165,21 @@ def profile():
     }
 
     # --- Summary stats section (Subagent 2) --- #
-    # TODO(Subagent 2): call get_summary_stats(uid) and map its keys
-    # {total_spent, transaction_count, top_category} onto the template vars
-    # {total_amount, total_count, top_category}.
-    total_amount = 0
-    total_count = 0
-    top_category = "—"
+    stats = get_summary_stats(uid)
+    total_amount = stats["total_spent"]
+    total_count = stats["transaction_count"]
+    top_category = stats["top_category"]
 
     # --- Transaction history section (Subagent 1) --- #
-    # TODO(Subagent 1): call get_recent_transactions(uid). Its keys
-    # (date/description/category/amount) already match the template — no mapping.
-    recent = []
+    # Keys already match the template (date/description/category/amount).
+    recent = get_recent_transactions(uid)
 
     # --- Category breakdown section (Subagent 3) --- #
-    # TODO(Subagent 3): call get_category_breakdown(uid) and map each item
-    # {name, amount, pct} onto the template's {category, total, pct}.
-    breakdown = []
+    # Map helper keys {name, amount, pct} onto the template's {category, total, pct}.
+    breakdown = [
+        {"category": item["name"], "total": item["amount"], "pct": item["pct"]}
+        for item in get_category_breakdown(uid)
+    ]
 
     return render_template(
         "profile.html",
