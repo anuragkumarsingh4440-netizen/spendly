@@ -8,6 +8,12 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_user_by_id,
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown,
+)
 
 app = Flask(__name__)
 # Signed-cookie sessions. Use SECRET_KEY in production; dev fallback otherwise.
@@ -143,37 +149,38 @@ def logout():
 @app.route("/profile")
 @login_required
 def profile():
-    # Step 4 is UI-first: the page is driven entirely by hardcoded data so the
-    # layout can be validated in isolation. Real DB queries are wired in Step 5.
+    # Step 5: every section is driven by live DB queries scoped to the
+    # logged-in user. Query helpers live in database/queries.py; this route
+    # maps their output onto the variable names profile.html already consumes.
+    uid = session["user_id"]
+
+    # --- User info (orchestrator) --- #
+    # get_user_by_id returns {name, email, member_since}; the template reads
+    # user.created_at for the "Member since" line.
+    info = get_user_by_id(uid)
     user = {
-        "name": "Demo User",
-        "email": "demo@spendly.app",
-        "created_at": "Jan 2026",
+        "name": info["name"],
+        "email": info["email"],
+        "created_at": info["member_since"],
     }
 
-    # Most recent expenses for the transaction-history table (hardcoded).
-    recent = [
-        {"date": "2026-06-14", "description": "Groceries — weekly run", "category": "Food", "amount": 1842.50},
-        {"date": "2026-06-13", "description": "Metro card top-up", "category": "Transport", "amount": 500.00},
-        {"date": "2026-06-12", "description": "Electricity bill", "category": "Bills", "amount": 1320.00},
-        {"date": "2026-06-11", "description": "Movie night", "category": "Entertainment", "amount": 760.00},
-        {"date": "2026-06-10", "description": "Pharmacy", "category": "Health", "amount": 415.00},
-        {"date": "2026-06-09", "description": "New headphones", "category": "Shopping", "amount": 2999.00},
-    ]
+    # --- Summary stats section (Subagent 2) --- #
+    # TODO(Subagent 2): call get_summary_stats(uid) and map its keys
+    # {total_spent, transaction_count, top_category} onto the template vars
+    # {total_amount, total_count, top_category}.
+    total_amount = 0
+    total_count = 0
+    top_category = "—"
 
-    # Per-category totals for the breakdown bars (largest first); pct is the
-    # bar width relative to the largest category, precomputed for the template.
-    breakdown = [
-        {"category": "Shopping", "total": 6480.00, "pct": 100},
-        {"category": "Food", "total": 5210.50, "pct": 80},
-        {"category": "Bills", "total": 3120.00, "pct": 48},
-        {"category": "Transport", "total": 1500.00, "pct": 23},
-        {"category": "Health", "total": 915.00, "pct": 14},
-    ]
+    # --- Transaction history section (Subagent 1) --- #
+    # TODO(Subagent 1): call get_recent_transactions(uid). Its keys
+    # (date/description/category/amount) already match the template — no mapping.
+    recent = []
 
-    total_amount = sum(item["total"] for item in breakdown)
-    total_count = 27
-    top_category = breakdown[0]["category"] if breakdown else "—"
+    # --- Category breakdown section (Subagent 3) --- #
+    # TODO(Subagent 3): call get_category_breakdown(uid) and map each item
+    # {name, amount, pct} onto the template's {category, total, pct}.
+    breakdown = []
 
     return render_template(
         "profile.html",
