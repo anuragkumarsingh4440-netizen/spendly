@@ -21,6 +21,40 @@
         <p class="profile-since">Member since {{ user.created_at }}</p>
     </header>
 
+    {# --- Date filter (Step 6): plain GET form so it works without JS. --- #}
+    <form class="filter-bar" method="get" action="{{ url_for('profile') }}">
+        <div class="filter-dates">
+            <label class="filter-field">
+                <span class="filter-label">From</span>
+                <input type="date" name="start" value="{{ start or '' }}">
+            </label>
+            <label class="filter-field">
+                <span class="filter-label">To</span>
+                <input type="date" name="end" value="{{ end or '' }}">
+            </label>
+            <button type="submit" class="btn-primary filter-apply">
+                <i data-lucide="filter"></i>Apply
+            </button>
+        </div>
+        <div class="filter-presets">
+            <a class="filter-preset{{ ' active' if not filtered }}"
+               href="{{ url_for('profile', range='all_time') }}">All time</a>
+            <a class="filter-preset{{ ' active' if active_preset == 'this_month' }}"
+               href="{{ url_for('profile', range='this_month') }}">This month</a>
+            <a class="filter-preset{{ ' active' if active_preset == 'last_30_days' }}"
+               href="{{ url_for('profile', range='last_30_days') }}">Last 30 days</a>
+            <a class="filter-preset{{ ' active' if active_preset == 'this_year' }}"
+               href="{{ url_for('profile', range='this_year') }}">This year</a>
+        </div>
+    </form>
+
+    {% if filtered %}
+    <p class="filter-active-note">
+        Showing {{ start }} → {{ end }}
+        {% if total_count == 0 %}— no expenses in this range{% endif %}
+    </p>
+    {% endif %}
+
     <div class="profile-stats">
         <div class="stat-card">
             <div class="stat-icon"><i data-lucide="wallet"></i></div>
@@ -62,6 +96,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% elif filtered %}
+        <p class="profile-empty">No expenses in this range.</p>
         {% else %}
         <p class="profile-empty">No expenses yet. <a href="{{ url_for('add_expense') }}">Add your first one</a>.</p>
         {% endif %}
@@ -81,6 +117,8 @@
             </div>
             {% endfor %}
         </div>
+        {% elif filtered %}
+        <p class="profile-empty">No expenses in this range.</p>
         {% else %}
         <p class="profile-empty">Nothing to break down yet.</p>
         {% endif %}

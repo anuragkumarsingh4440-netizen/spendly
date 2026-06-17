@@ -12,6 +12,18 @@ from datetime import datetime
 from database.db import get_db
 
 
+def _date_clause(start, end):
+    """Build an inclusive date-range SQL fragment and its bound parameters.
+
+    Returns ``("", [])`` for all-time (either bound missing), or
+    ``(" AND date BETWEEN ? AND ?", [start, end])`` when both bounds are given.
+    Dates are passed as bound parameters — never formatted into the SQL.
+    """
+    if start and end:
+        return " AND date BETWEEN ? AND ?", [start, end]
+    return "", []
+
+
 def get_user_by_id(user_id):
     """Return the user's display info, or ``None`` if no such user.
 
@@ -39,25 +51,29 @@ def get_user_by_id(user_id):
 
 # === Summary stats (Subagent 2) ====================================== #
 
-def get_summary_stats(user_id):
-    """Return spending summary for a user.
+def get_summary_stats(user_id, start=None, end=None):
+    """Return spending summary for a user, optionally scoped to a date range.
 
     dict with ``total_spent`` (float), ``transaction_count`` (int) and
-    ``top_category`` (str). With no expenses, returns zeros and "—".
+    ``top_category`` (str). With no expenses (in range), returns zeros and "—".
+    When ``start``/``end`` are both given, only expenses whose ``date`` falls
+    inclusively within that range are counted.
     """
+    clause, bounds = _date_clause(start, end)
     db = get_db()
     try:
         total_spent = db.execute(
-            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?" + clause,
+            [user_id, *bounds],
         ).fetchone()[0]
         transaction_count = db.execute(
-            "SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user_id,)
+            "SELECT COUNT(*) FROM expenses WHERE user_id = ?" + clause,
+            [user_id, *bounds],
         ).fetchone()[0]
         top_row = db.execute(
-            "SELECT category FROM expenses WHERE user_id = ? "
-            "GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,),
+            "SELECT category FROM expenses WHERE user_id = ?" + clause
+            + " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            [user_id, *bounds],
         ).fetchone()
     finally:
         db.close()
@@ -74,18 +90,21 @@ def get_summary_stats(user_id):
 
 # === Transaction history (Subagent 1) =============================== #
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, start=None, end=None):
     """Return the user's most recent expenses, newest first.
 
     list of dicts, each with ``date``, ``description``, ``category``,
-    ``amount``. Empty list if the user has no expenses.
+    ``amount``. Empty list if the user has no expenses (in range). When
+    ``start``/``end`` are both given, only expenses within that inclusive range
+    are returned.
     """
+    clause, bounds = _date_clause(start, end)
     db = get_db()
     try:
         rows = db.execute(
             "SELECT date, description, category, amount FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
-            (user_id, limit),
+            "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
+            [user_id, *bounds, limit],
         ).fetchall()
     finally:
         db.close()
@@ -95,19 +114,21 @@ def get_recent_transactions(user_id, limit=10):
 
 # === Category breakdown (Subagent 3) ================================ #
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, start=None, end=None):
     """Return per-category totals ordered by amount descending.
 
     list of dicts, each with ``name``, ``amount`` (float) and ``pct`` (int
     percentage of total). The ``pct`` values sum to exactly 100. Empty list if
-    the user has no expenses.
+    the user has no expenses (in range). When ``start``/``end`` are both given,
+    only expenses within that inclusive range are aggregated.
     """
+    clause, bounds = _date_clause(start, end)
     db = get_db()
     try:
         rows = db.execute(
             "SELECT category, SUM(amount) AS total FROM expenses "
-            "WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,),
+            "WHERE user_id = ?" + clause + " GROUP BY category ORDER BY total DESC",
+            [user_id, *bounds],
         ).fetchall()
     finally:
         db.close()

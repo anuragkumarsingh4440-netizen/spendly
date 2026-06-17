@@ -14,6 +14,7 @@ from database.queries import (
     get_recent_transactions,
     get_category_breakdown,
 )
+from database.date_filter import resolve_range, is_valid_date, PRESETS
 
 app = Flask(__name__)
 # Signed-cookie sessions. Use SECRET_KEY in production; dev fallback otherwise.
@@ -154,9 +155,27 @@ def profile():
     # maps their output onto the variable names profile.html already consumes.
     uid = session["user_id"]
 
+    # --- Date filter (Step 6) --- #
+    # Read optional start/end/range from the query string and resolve to a
+    # concrete (start, end) pair. resolve_range fails safe to all-time (None,
+    # None) for partial, malformed or unknown input, so every section below
+    # behaves exactly as in Step 5 when no valid filter is supplied.
+    range_key = request.args.get("range")
+    raw_start = request.args.get("start")
+    raw_end = request.args.get("end")
+    start, end = resolve_range(range_key=range_key, start=raw_start, end=raw_end)
+    filtered = start is not None and end is not None
+
+    # Which preset (if any) actually drove the result, so the template can mark
+    # it active off the *resolved* state rather than the raw range_key. Explicit
+    # dates win in resolve_range, so a preset is only "active" when no valid
+    # explicit pair was supplied.
+    explicit_dates = is_valid_date(raw_start) and is_valid_date(raw_end)
+    active_preset = range_key if (range_key in PRESETS and not explicit_dates) else None
+
     # --- User info (orchestrator) --- #
-    # get_user_by_id returns {name, email, member_since}; the template reads
-    # user.created_at for the "Member since" line.
+    # User info is never date-scoped. get_user_by_id returns
+    # {name, email, member_since}; the template reads user.created_at.
     info = get_user_by_id(uid)
     user = {
         "name": info["name"],
@@ -165,20 +184,20 @@ def profile():
     }
 
     # --- Summary stats section (Subagent 2) --- #
-    stats = get_summary_stats(uid)
+    stats = get_summary_stats(uid, start=start, end=end)
     total_amount = stats["total_spent"]
     total_count = stats["transaction_count"]
     top_category = stats["top_category"]
 
     # --- Transaction history section (Subagent 1) --- #
     # Keys already match the template (date/description/category/amount).
-    recent = get_recent_transactions(uid)
+    recent = get_recent_transactions(uid, start=start, end=end)
 
     # --- Category breakdown section (Subagent 3) --- #
     # Map helper keys {name, amount, pct} onto the template's {category, total, pct}.
     breakdown = [
         {"category": item["name"], "total": item["amount"], "pct": item["pct"]}
-        for item in get_category_breakdown(uid)
+        for item in get_category_breakdown(uid, start=start, end=end)
     ]
 
     return render_template(
@@ -189,6 +208,10 @@ def profile():
         recent=recent,
         breakdown=breakdown,
         top_category=top_category,
+        start=start,
+        end=end,
+        active_preset=active_preset,
+        filtered=filtered,
     )
 
 
