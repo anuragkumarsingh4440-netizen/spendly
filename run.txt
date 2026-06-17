@@ -1,0 +1,40 @@
+# run.txt — git bash commands for the expense-tracker (Spendly) project
+# Single source of all git bash commands used in this project.
+# Run these from the project root: expense-tracker/
+
+# ---- Setup ----
+# Create the virtual environment (first time only)
+python -m venv venv
+
+# Activate the venv (git bash)
+source venv/Scripts/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# ---- Run the app ----
+# Use the venv python (system python lacks Flask). Serves on http://127.0.0.1:5001
+./venv/Scripts/python.exe app.py
+
+# Demo login: demo@spendly.com / demo123
+
+# ---- Tests ----
+./venv/Scripts/python.exe -m pytest tests/ -v
+
+# ---- Git ----
+git status
+git add -A
+git commit -m "message"
+git push origin feature/profile-page-redesign
+
+# ---- Parallel subagents (git worktrees) ----
+# Used in Step 5 to split work across 3 isolated agents, then integrate.
+# Inspect active worktrees
+git worktree list
+# Remove a finished agent worktree (force = discard its uncommitted changes)
+git worktree remove --force .claude/worktrees/<agent-dir>
+# Delete the leftover agent branch and prune stale worktree refs
+git branch -D <worktree-branch>
+git worktree prune
+
+# Remote: https://github.com/anuragkumarsingh4440-netizen/spendly.git
