@@ -38,3 +38,7 @@ git branch -D <worktree-branch>
 git worktree prune
 
 # Remote: https://github.com/anuragkumarsingh4440-netizen/spendly.git
+................                                                         [100%]
+16 passed in 1.87s
+..................................................................       [100%]
+66 passed in 7.45s
