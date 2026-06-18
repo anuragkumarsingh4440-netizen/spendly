@@ -56,3 +56,5 @@ To https://github.com/anuragkumarsingh4440-netizen/spendly.git
 ........................................................................ [ 75%]
 ........................                                                 [100%]
 96 passed in 8.89s
+To https://github.com/anuragkumarsingh4440-netizen/spendly.git
+   6d6efb4..c83f780  main -> main
