@@ -374,9 +374,32 @@ def edit_expense(id):
     )
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
+@login_required
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    # POST-only: a destructive action must never fire from a link or prefetch.
+    # A GET to this route returns 405 (only POST is registered).
+    #
+    # Ownership gate: a missing expense — or one belonging to another user — is
+    # indistinguishable here and returns 404, so we never leak whether an id
+    # exists for someone else.
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    # Ownership-scoped delete: the user_id predicate ensures a user can never
+    # remove someone else's row even by guessing the id.
+    db = get_db()
+    try:
+        db.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (id, session["user_id"]),
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":
