@@ -4,7 +4,7 @@ import sqlite3
 from datetime import date, datetime
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import get_db, init_db, seed_db
@@ -13,6 +13,7 @@ from database.queries import (
     get_summary_stats,
     get_recent_transactions,
     get_category_breakdown,
+    get_expense_by_id,
 )
 from database.date_filter import resolve_range, is_valid_date, PRESETS
 
@@ -296,9 +297,81 @@ def add_expense():
     )
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
+@login_required
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    # Ownership gate: load the expense scoped to the logged-in user. A missing
+    # expense — or one belonging to another user — is indistinguishable here and
+    # returns 404, so we never leak whether an id exists for someone else.
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "POST":
+        amount = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date_str = request.form.get("date", "").strip()
+        description = request.form.get("description", "").strip()
+
+        # Preserve submitted values (and the id, so the form action still targets
+        # this expense) when re-rendering on error.
+        submitted = {
+            "id": id,
+            "amount": amount,
+            "category": category,
+            "date": date_str,
+            "description": description,
+        }
+
+        def reject(message):
+            return render_template(
+                "edit_expense.html",
+                error=message,
+                categories=CATEGORIES,
+                expense=submitted,
+            )
+
+        # Validate amount: required, numeric, finite, greater than zero.
+        # float() also accepts "nan"/"inf"/overflow literals, which slip past
+        # a bare "<= 0" check — guard with isfinite.
+        try:
+            amount_value = float(amount)
+        except ValueError:
+            return reject("Please enter a valid amount.")
+        if not math.isfinite(amount_value) or amount_value <= 0:
+            return reject("Amount must be greater than zero.")
+
+        # Validate category against the server-side list (don't trust the form).
+        if category not in CATEGORIES:
+            return reject("Please choose a valid category.")
+
+        # Validate date format and normalize to zero-padded YYYY-MM-DD.
+        try:
+            date_str = datetime.strptime(date_str, "%Y-%m-%d").date().isoformat()
+        except ValueError:
+            return reject("Please enter a valid date.")
+
+        # Update in place, ownership-scoped: the user_id predicate ensures a user
+        # can never overwrite someone else's row even by guessing the id.
+        db = get_db()
+        try:
+            db.execute(
+                "UPDATE expenses SET amount = ?, category = ?, date = ?, "
+                "description = ? WHERE id = ? AND user_id = ?",
+                (amount_value, category, date_str, description or None,
+                 id, session["user_id"]),
+            )
+            db.commit()
+        finally:
+            db.close()
+
+        return redirect(url_for("profile"))
+
+    return render_template(
+        "edit_expense.html",
+        categories=CATEGORIES,
+        expense=expense,
+    )
 
 
 @app.route("/expenses/<int:id>/delete")

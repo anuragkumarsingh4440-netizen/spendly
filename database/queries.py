@@ -102,7 +102,7 @@ def get_recent_transactions(user_id, limit=10, start=None, end=None):
     db = get_db()
     try:
         rows = db.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
             [user_id, *bounds, limit],
         ).fetchall()
@@ -110,6 +110,27 @@ def get_recent_transactions(user_id, limit=10, start=None, end=None):
         db.close()
 
     return [dict(row) for row in rows]
+
+
+def get_expense_by_id(expense_id, user_id):
+    """Return a single expense owned by ``user_id``, or ``None``.
+
+    dict with ``id``, ``amount``, ``category``, ``date`` and ``description`` for
+    the expense whose ``id`` matches *and* which belongs to ``user_id``. The
+    ``user_id`` predicate enforces ownership — an expense belonging to another
+    user (or no such expense) yields ``None``, never another user's row.
+    """
+    db = get_db()
+    try:
+        row = db.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        db.close()
+
+    return dict(row) if row is not None else None
 
 
 # === Category breakdown (Subagent 3) ================================ #

@@ -75,7 +75,7 @@ def test_get_recent_transactions_order_and_keys(seed_user_id):
     txns = get_recent_transactions(seed_user_id)
     assert len(txns) > 0
     for t in txns:
-        assert set(t.keys()) == {"date", "description", "category", "amount"}
+        assert set(t.keys()) == {"id", "date", "description", "category", "amount"}
     dates = [t["date"] for t in txns]
     assert dates == sorted(dates, reverse=True)  # newest first
 
